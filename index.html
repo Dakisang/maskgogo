@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-160630746-1"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+
+		gtag('config', 'UA-160630746-1');
+	</script>
+  <title>마스크고고(공적마스크 재고 확인)</title>
+  <link rel="apple-touch-icon" sizes="57x57" href="./ico/apple-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="./ico/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="./ico/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="./ico/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="./ico/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="./ico/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="./ico/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="./ico/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./ico/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192"  href="./ico/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./ico/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="./ico/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./ico/favicon-16x16.png">
+  <link rel="manifest" href="./ico/manifest.json">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="./ico/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+ 
+ 
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/bootstrap.min.css">
+  <link rel="stylesheet" href="./css/mycss.css">
+  <script src="./js/jquery-3.4.1.min.js"></script>
+  <script src="./js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=7361ecef1a26e73b4c034d4a886e6f2b&libraries=services"></script>
+  <script>
+		var markers = []; //여러개의 마커를 제어하기위한 배열
+		var infowindow = new kakao.maps.InfoWindow({zIndex:1,removable:true}); //맵의 info박스 객체
+		var ps = new kakao.maps.services.Places();  //키워드 검색용 객체
+		function addMarker(position, placeName, stateStr, remain_stat, atString) { //마커생성함수(약국검색용)
+			if (remain_stat == "plenty"){ //충분(100개 이상)
+				var imageSrc = "./img/plenty.png", // 마커이미지의 주소입니다    
+    				imageSize = new kakao.maps.Size(40, 20), // 마커이미지의 크기입니다
+    				imageOption = {offset: new kakao.maps.Point(20, 10)}; // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다
+			} else if (remain_stat == "some"){ //보통(30개 이상 100개 미만)
+				var imageSrc = "./img/some.png", // 마커이미지의 주소입니다    
+    				imageSize = new kakao.maps.Size(40, 20), // 마커이미지의 크기입니다
+    				imageOption = {offset: new kakao.maps.Point(20, 10)}; // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다
+			} else if (remain_stat == "few") { //부족(1개이상 30개미만)
+				var imageSrc = "./img/few.png", // 마커이미지의 주소입니다    
+    				imageSize = new kakao.maps.Size(40, 20), // 마커이미지의 크기입니다
+    				imageOption = {offset: new kakao.maps.Point(20, 10)}; // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다
+			} else if (remain_stat == "empty") { //품절(0개)
+				var imageSrc = "./img/empty.png", // 마커이미지의 주소입니다    
+    				imageSize = new kakao.maps.Size(40, 20), // 마커이미지의 크기입니다
+    				imageOption = {offset: new kakao.maps.Point(20, 10)}; // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다
+			} else {
+				var imageSrc = "./img/empty.png", // 마커이미지의 주소입니다    
+    				imageSize = new kakao.maps.Size(40, 20), // 마커이미지의 크기입니다
+    				imageOption = {offset: new kakao.maps.Point(20, 10)}; // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다
+			}
+			var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+			
+			// 마커를 생성합니다
+			var marker = new kakao.maps.Marker({
+				position: position,
+				image: markerImage
+			});
+
+			// 마커가 지도 위에 표시되도록 설정합니다
+			marker.setMap(map);
+
+			kakao.maps.event.addListener(marker, 'click', function() {
+				// 마커를 클릭하면 장소명이 인포윈도우에 표출됩니다
+				infowindow.setContent('<div style="padding:5px;font-size:12px;">' + placeName + '<br>재고상태 : ' + stateStr + atString + '</div>');
+				infowindow.open(map, marker);
+			});
+
+			// 생성된 마커를 배열에 추가합니다
+			markers.push(marker);
+		}
+	   
+		function setMarkers(map) { //마커들 전체 맵에 숨기기 또는 보이기 전용 함수
+			for (var i = 0; i < markers.length; i++) {
+			markers[i].setMap(map);
+			}
+		}
+
+		function placesSearchCB (data, status, pagination) { // 키워드 검색 완료 시 호출되는 콜백함수 입니다
+			if (status === kakao.maps.services.Status.OK) {
+				setMarkers(null);
+				// 검색된 장소 위치를 기준으로 지도 범위를 재설정하기위해
+				// LatLngBounds 객체에 좌표를 추가합니다
+				var bounds = new kakao.maps.LatLngBounds();
+
+				for (var i=0; i<data.length; i++) {
+					displayMarker(data[i]);    
+					bounds.extend(new kakao.maps.LatLng(data[i].y, data[i].x));
+				}       
+
+				// 검색된 장소 위치를 기준으로 지도 범위를 재설정합니다
+				map.setBounds(bounds);
+			} 
+		}
+
+		function displayMarker(place) { //마커생성함수(키워드 검색 용)
+			// 마커를 생성하고 지도에 표시합니다
+			var marker = new kakao.maps.Marker({
+				position: new kakao.maps.LatLng(place.y, place.x) 
+			});
+
+			marker.setMap(map);
+
+			// 마커에 클릭이벤트를 등록합니다
+			kakao.maps.event.addListener(marker, 'click', function() {
+				// 마커를 클릭하면 장소명이 인포윈도우에 표출됩니다
+				infowindow.setContent('<div style="padding:5px;font-size:12px;">' + place.place_name + '</div>');
+				infowindow.open(map, marker);
+			});
+			
+			// 생성된 마커를 배열에 추가합니다
+			markers.push(marker);
+		}
+
+	    /**********************************맵 관련 각종 함수**************************************/
+
+	  
+	$(document).ready(function(){
+		$('#exampleModalScrollable').modal({backdrop: 'static', keyboard: false}) ; //모달을 띄움.
+		
+		$('.place').submit(function(){ //장소 검색
+			var keyword = $('.keyword').val();
+			ps.keywordSearch(keyword, placesSearchCB); 
+		});
+
+		$('.place-sumit').click(function(){ //장소 검색
+			$('.place').trigger('submit');
+		});
+		
+		$('.readmore').click(function(){ //상세보기 버튼 클릭시
+			location.href="#stock-wrap";
+		});
+		
+		
+		$('#search_location').click(function(){
+			if (navigator.geolocation) {
+
+				// GeoLocation을 이용해서 접속 위치를 얻어옵니다
+				navigator.geolocation.getCurrentPosition(function(position) {
+
+				var lat = position.coords.latitude, // 위도
+				lon = position.coords.longitude; // 경도
+
+				var locPosition = new kakao.maps.LatLng(lat, lon) // 마커가 표시될 위치를 geolocation으로 얻어온 좌표로 생성합니다
+				map.setCenter(locPosition);
+				map.setLevel(4);
+				});
+
+			} else { // HTML5의 GeoLocation을 사용할 수 없을때 마커 표시 위치와 인포윈도우 내용을 설정합니다
+				alert('위치를 켜주세요');
+			}
+		});
+		
+		$('.cgogo').click(function(){
+			$(this).attr("disabled","disabled"); //검색동안 검색버튼 비활성화
+			$("#sang").val("Y");
+			$('.gogo').trigger('click');
+		});
+
+		$('.gogo').click(function(){ //검색버튼 클릭시
+			$('.readmore').css("display","none"); //상세보기 버튼 숨기기
+			
+			$('.loading').css("display","block"); 
+			$('.loading-suc').css("display","none");
+			$('.loading-fail').css("display","none");
+			$('.loading-no').css("display","none"); //각종 상태정보 숨기고 로딩중 문구만 보여줌
+			
+			$(this).attr("disabled","disabled"); //검색동안 검색버튼 비활성화
+			
+			var lat  = map.getCenter().getLat();
+			var lng = map.getCenter().getLng(); //위도, 경도 얻어옴 
+			$('#stock-wrap').empty(); //데이터란 비우기
+			$.ajax({
+				url:"https://8oi9s0nnth.apigw.ntruss.com/corona19-masks/v1/storesByGeo/json?lat=" + lat + "&lng=" + lng + "&m=1500",
+				//url:"js/test.json",
+				dataType:"json",
+				success:function(data){
+					if(data.count>0){
+						setMarkers(null);
+						var $cnt = data.count;
+						if($('#sang').val()=="Y"){
+							var cntinfo="";
+						}else{
+							var cntinfo = $('<span/>').text("총 " + $cnt + "건이 검색되었습니다.");
+						}
+						var statediv = $('<div/>'); //재고상태 안내버튼 들어갈 박스
+						
+						var stateinfo1 = $('<span class="badge badge-success"/>').text('100▲').css("margin-right","3px");
+						var stateinfo2 = $('<span class="badge badge-warning"/>').text('30~99개').css("margin-right","3px");
+						var stateinfo3 = $('<span class="badge badge-danger"/>').text('1~29개'); //재고상태 안내버튼들
+						
+						statediv.append(stateinfo1,stateinfo2,stateinfo3);
+						statediv.css("float","right").css("margin-bottom","3px");
+						
+						var tb = $('<table class="table" />').css("text-align","center")
+						
+						var th = $('<thead/>');
+						var thdata = $('<tr />').append(
+							$('<th scope="col"/>').text('#'),
+							$('<th scope="col"/>').text('상호명 (클릭시 지도로)'),
+							$('<th scope="col"/>').text('입고시간'),
+							$('<th scope="col"/>').text('재고상태')
+						);
+						th.append(thdata); //표 헤드부분
+
+						tb.append(th); //테이블에 헤드추가
+
+						var bounds = new kakao.maps.LatLngBounds();
+						var checkcnt = 0; //점검용cnt
+						for(var i in data.stores){
+							if (data.stores[i].remain_stat == "plenty"){ //충분(100개 이상)
+								var stateBtn = $('<span class="badge badge-success"/>').text('충분');
+								var stateStr = '<span class="badge badge-success">충분</span>'
+							} else if (data.stores[i].remain_stat == "some"){ //보통(30개 이상 100개 미만)
+								var stateBtn = $('<span class="badge badge-warning"/>').text('보통');
+								var stateStr = '<span class="badge badge-warning">보통</span>'
+							} else if (data.stores[i].remain_stat == "few") { //부족(1개이상 30개미만)
+								var stateBtn = $('<span class="badge badge-danger"/>').text('부족');
+								var stateStr = '<span class="badge badge-danger">부족</span>'
+							} else if (data.stores[i].remain_stat == "empty") { //품절(0개)
+								var stateBtn = $('<span class="badge badge-light"/>').text('품절');
+								var stateStr = '<span class="badge badge-light">품절</span>'
+							} else if (data.stores[i].remain_stat == "break") { //품절(0개)
+								var stateBtn = $('<span class="badge badge-light"/>').text('판매중지');
+								var stateStr = '<span class="badge badge-light">판매중지</span>'
+							} else { //정보없음()
+								var stateBtn = $('<span class="badge badge-dark"/>').text('정보없음');
+								var stateStr = '<span class="badge badge-dark">정보없음</span>'
+							}
+							var atText="";
+							var hourText ="";
+							
+							if (data.stores[i].stock_at) {
+								atText = data.stores[i].stock_at.substring(5,16);
+								hourText = data.stores[i].stock_at.substring(11,13);
+							}
+							
+							var now = new Date();
+							var nowString = now.getMonth() + 1 + "/" + now.getDate();
+							var nowHour = now.getHours();
+							nowString = "0" + nowString;
+							if((atText.indexOf(nowString)>-1)&&(nowHour - hourText < 3)){
+								var atData = $('<span class="badge badge-primary"/>').text('최근입고').css("margin-left","2px");
+								var atString = '<span class="badge badge-primary" style="margin-left:2px;">최근입고</span>' 
+							} else {
+								var atData = "";
+								var atString = "";
+								if($('#sang').val()=="Y"){
+									continue;
+								}
+							}
+							checkcnt++;
+							var row = $("<tr />").append(
+								$("<th scope='col'/>").text(Number(i)+1), //no
+								$("<td id='name" + i + "'/>").text(data.stores[i].name), //상호명
+								$("<td />").append(atText,atData), //입고시간
+								$("<td />").append(stateBtn) //재고상태
+							);
+							
+							var hiddenlat = $('<input type="hidden" id="lat"/>').val(data.stores[i].lat);
+							var hiddenlng = $('<input type="hidden" id="lng"/>').val(data.stores[i].lng);
+
+							row.children("#name" + i).append(hiddenlat, hiddenlng);
+
+							row.children("#name" + i).click(function(){
+								
+								if(($(this).children("#lat").val()) && ($(this).children("#lng").val())){
+									map.setLevel(1);
+									var mLag = $(this).children("#lat").val();
+									var mLng = $(this).children("#lng").val();
+									var movLatLng = new kakao.maps.LatLng(mLag, mLng) // 마커가 표시될 위치를 geolocation으로 얻어온 좌표로 생성합니다
+									map.setCenter(movLatLng);
+									location.href = "#map-wrap";
+								}
+							});
+							tb.append(row);
+							if(data.stores[i].lat && data.stores[i].lng){
+								addMarker(new kakao.maps.LatLng(data.stores[i].lat, data.stores[i].lng),data.stores[i].name, stateStr, data.stores[i].remain_stat, atString); //검색된곳 마크추가
+								bounds.extend(new kakao.maps.LatLng(data.stores[i].lat, data.stores[i].lng)); //마크추가에 따라 지도범위확장
+							}
+						}
+						if (checkcnt>0){
+							map.setBounds(bounds); //범위확장
+						}
+						
+						$('#stock-wrap').append(cntinfo); //개수정보추가
+						$('#stock-wrap').append(statediv); //상태뱃지 정보 추가
+						$('#stock-wrap').append(tb); //데이터 테이블 추가
+
+						
+						$('.readmore').css("display","inline-block"); //상세정보보기 버튼 보이기
+						
+						$('.loading').css("display","none");
+						$('.loading-suc').css("display","block"); //로딩문구 숨기고 성공문구 활성화
+						$('.gogo').removeAttr("disabled"); //검색이 끝났으므로 다시 검색버튼 활성화
+						$('.cgogo').removeAttr("disabled"); //검색이 끝났으므로 다시 검색버튼 활성화
+						$('#sang').val("N");
+					} else { //받아온 데이터가 0일경우(주변에 약국x)
+						$('.loading').css("display","none");
+					    $('.loading-no').css("display","block"); //로딩문구 숨기고 검색결과 없음 문구 활성화
+						
+						$('.gogo').removeAttr("disabled");//검색이 끝났으므로 다시 검색버튼 활성화
+						$('.cgogo').removeAttr("disabled");//검색이 끝났으므로 다시 검색버튼 활성화
+						$('#sang').val("N");
+					}
+				
+				},
+				error:function(r){ //통신에러시
+					//alert("ErrorCode:"+r.status+"\n"+"message:"+r.responseText); 
+					$('.loading').css("display","none");
+					$('.loading-fail').css("display","block"); //로딩문구 숨기고 실패문구활성화
+					
+					$('.gogo').removeAttr("disabled");
+				}
+			});
+		});
+	  });
+	/**********************************웹페이지 이벤트 관련 함수**************************************/
+  </script>
+</head>
+
+
+
+
+<body>
+<nav class="navbar navbar-expand-xl navbar-light bg-light">
+	<a class="navbar-brand" href="#">마스크고고(MaskGOGO)</a>
+	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor03" aria-controls="navbarColor03" aria-expanded="false" aria-label="Toggle navigation">
+		<span class="navbar-toggler-icon"></span>
+	</button>
+	<div class="collapse navbar-collapse" id="navbarColor03">
+		<ul class="navbar-nav mr-auto">
+			<li class="nav-item active">
+				<a class="nav-link" href="#">재고확인 <span class="sr-only">(current)</span></a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="http://blog.naver.com/kfdazzang/221837044802">마스크 사용 권고사항</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="https://blog.naver.com/kfdazzang/221839489769">마스크 5부제란?</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="#">ABOUT</a>
+			</li>
+		</ul>
+	</div>
+	</nav>
+<!----------------------------------------------------NAV---------------------------------------------------->
+
+
+<div class="bg-primary">
+	<div class="container text-white text-center p-3 info-box">
+		<div class="string-wrap">
+			<h1 class="string-01">이제 공적마스크 재고를 간편하게 파악하세요</h1>
+		</div>
+	</div>
+</div>
+<!----------------------------------------------------사이트안내문구---------------------------------------------------->
+  
+
+  <div class="modal fade" id="exampleModalScrollable" tabindex="-1" role="dialog" aria-labelledby="exampleModalScrollableTitle" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-scrollable" role="document">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="exampleModalScrollableTitle">마스크고고(MaskGOGO)</h5>
+		</div>
+		<div class="modal-body">
+			  <h5>코로나 바이러스로 인한 피해를 줄이고자 힘써주시는 모든 분들께 감사를 표합니다.</h5>
+			  <p><br>본 사이트는 「공적 마스크 판매 현황 조회 API」와 「Kakao Maps API」를 활용해 개발되었습니다.<br>
+				<p><strong style="color: red;">재고 정보 업데이트에는 정부 정책상 최소 5분의 지연이 발생합니다. 또한, 다음 이유 등에 따라 실제와 제공되는 정보가 상이할 수 있습니다.<br>
+					<div style="font-size: 12px;">
+					ex)<br>
+					&nbsp&nbsp대형/소형 중 소형만 남은 경우<br>
+					&nbsp&nbsp불량이 있어 판매되지 못한 경우<br>
+					&nbsp&nbsp현장에서 판매 사실을 곧바로 전산에 등록하지 않은 경우<br>
+					</div>
+			<br>따라서 재고의 유무를 판매처에 항의하지 말아주시길 당부드립니다.
+			</strong>
+				</p>
+		</div>
+		<div class="modal-footer">
+		  <button type="button" class="btn btn-primary" data-dismiss="modal">확인했습니다.</button> <!--disabled="disabled"-->
+		</div>
+	  </div>
+	</div>
+  </div>
+<!----------------------------------------------------MODAL---------------------------------------------------->
+
+
+
+<div class="container p-3 my-3 text-center">
+	<!--<div class="alert alert-warning alert-dismissible fade show">
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+	  <strong>[알림]</strong> 현재 정부 데이터 서버 사용량 폭주로 검색이 지연되고 있습니다.
+   </div>-->
+	<div class="alert alert-info alert-dismissible fade show">
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+	  <strong>[알림]</strong> 현재 위치를 사용하므로 위치정보 접근 권한을 허용해주세요.
+   </div>
+  	<div class="alert alert-info alert-dismissible fade show">
+  	  	<button type="button" class="close" data-dismiss="alert">&times;</button>
+  		<strong>[알림]</strong> 정부 정책상 재고 정보 업데이트에 <strong>최소 5분</strong>의 지연이 발생합니다.
+  	</div>
+	<!----------------------------------------------------공지문구---------------------------------------------------->
+
+
+	<div class="border border-secondary rounded" id="map-wrap">
+		<div id="map" style="margin-bottom: 5px;"></div>
+		<div>
+			<form class="form-inline place" onsubmit="return false;">
+				<input type="text" class="form-control ml-auto keyword" placeholder="장소를 입력하세요">
+				<button type="button" class="btn btn-primary ml-1 place-sumit">GO</button>
+				<button id="search_location" type="button" class="btn btn-primary ml-1">현위치로</button>
+			</form>
+		</div>
+	</div>
+	<p>※ 지도 중심을 기준으로 반경 1.5km내의 공적 마스크 판매처를 전부 검색합니다.</p>
+	<!----------------------------------------------------지도부분---------------------------------------------------->
+	
+	<div class="alert alert-warning alert-dismissible fade show loading" role="alert" style="margin-top: 10px; display: none;">
+		<strong>[알림]</strong> 데이터 로딩중입니다. 잠시만 기다려 주세요.
+	</div>
+	<div class="alert alert-primary alert-dismissible fade show loading-suc" role="alert" style="margin-top: 10px; display: none;">
+		<strong>[알림]</strong> 로딩완료! 입고된지 오래되었는데 재고가 많은 경우에는 업데이트 누락의 가능성이 있습니다. 이용에 꼭 참고 바랍니다.
+	</div>
+	<div class="alert alert-danger alert-dismissible fade show loading-no" role="alert" style="margin-top: 10px; display: none;">
+		<strong>[알림]</strong> 인근에 약국이 없거나 데이터를 불러오는데 실패했습니다.
+	</div>
+	<div class="alert alert-danger alert-dismissible fade show loading-fail" role="alert" style="margin-top: 10px; display: none;">
+		<strong>[알림]</strong> 오류로 인해 데이터 로딩에 실패하였습니다. 다시 시도해 보세요.
+	</div>
+	<!----------------------------------------------------검색관련 결과문구---------------------------------------------------->
+
+	<button type="button" class="btn btn-primary gogo btn-sm" style="margin-right: 5px;">찾기</button>
+	<button type="button" class="btn btn-primary cgogo btn-sm" style="margin-right: 5px;">최근입고만 검색</button>
+	<button type="button" class="btn btn-primary readmore btn-sm" style="display: none;">상세보기</button>
+	<input type="hidden" id="sang" value="N"/>
+	<!----------------------------------------------------검색관련 버튼---------------------------------------------------->
+</div>
+
+<div class="container p-3 my-3">
+	
+	<div id="stock-wrap"> 
+	</div>
+	
+</div>
+<!----------------------------------------------------데이터 출력 부분---------------------------------------------------->
+
+<div class="container-fluid bg-light text-center">
+	<div class="row pt-4 pl-4">
+		<h3 class="text-left text-secondary ml-6">DEVELOPER</h3>
+	</div>
+	<div id="developer" class="row pb-4" >
+		<div class="col-sm-2">
+		</div>
+		<div class = "col-sm-4">
+			<p>서지우 (대구가톨릭대학교 컴퓨터소프트웨어학부)</p>
+			<p>sswwoo7675@cu.ac.kr</p>
+		</div>
+		<div class = "col-sm-4">
+			<p>진민준 (계명대학교 게임모바일공학전공)</p>
+			<p>5415035@stu.kmu.ac.kr</p>
+		</div>
+		<div class="col-sm-2"></div>
+	</div>
+</div>
+<!----------------------------------------------------개발자 정보---------------------------------------------------->
+
+<footer class="bg-secondary">
+	<div class ="container-fluid p-3 text-center text-white "  >
+
+		<p class = "font-size: small">
+			본 사이트는 「공적 마스크 판매 현황 조회 API」와 「Kakao Maps API」를 활용해 개발되었습니다.<br>
+			매장 사정에 따라 실제와 제공되는 정보가 상이할 수 있습니다. 이를 인지하지 못한 채 발생하는 모든 손해의 책임은 이용자에게 있습니다.<br><br>
+
+			이용에 불편함이 있으시다면 개발자 메일로 보내주세요. 검토 후 속히 개선하겠습니다.<br><br>
+
+			코로나 바이러스로 인한 피해를 줄이고자 힘써주시는 모든 분들께 감사를 표합니다.<br>
+			속히 종식되어 평범한 일상이 회복되기를 기원합니다.<br>
+			- 개발자 올림 -
+		</p>
+	</div>
+
+</footer>
+<!----------------------------------------------------푸터---------------------------------------------------->
+
+
+<script>
+	var mapContainer = document.getElementById('map'), // 지도를 표시할 div 
+	mapOption = { 
+		center: new kakao.maps.LatLng(37.582243, 127.075481), // 지도의 중심좌표 35.913926, 128.819377
+		level: 5 // 지도의 확대 레벨
+	};
+
+	// 지도를 표시할 div와  지도 옵션으로  지도를 생성합니다
+	var map = new kakao.maps.Map(mapContainer, mapOption);
+
+	if (navigator.geolocation) {
+
+	// GeoLocation을 이용해서 접속 위치를 얻어옵니다
+	navigator.geolocation.getCurrentPosition(function(position) {
+
+	var lat = position.coords.latitude, // 위도
+		lon = position.coords.longitude; // 경도
+
+	var locPosition = new kakao.maps.LatLng(lat, lon) // 마커가 표시될 위치를 geolocation으로 얻어온 좌표로 생성합니다
+	map.setCenter(locPosition);    
+		
+	});
+
+	} else { // HTML5의 GeoLocation을 사용할 수 없을때 마커 표시 위치와 인포윈도우 내용을 설정합니다
+
+	}
+
+</script>
+<!----------------------------------------------------지도 load관련 스크립트---------------------------------------------------->
+</body>
+</html>
